@@ -1,5 +1,6 @@
 import { postEvents } from "./api.mjs";
 import { extractEvents, toWire } from "./parse.mjs";
+import { sep } from "node:path";
 import { READ_CHUNK, listTranscripts, readFrom } from "./scan.mjs";
 import { log, readJson, writeJsonPrivate } from "./store.mjs";
 
@@ -8,7 +9,7 @@ export const REQUESTS_PER_MINUTE = 50;
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChunk = READ_CHUNK }) {
+export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChunk = READ_CHUNK, heartbeat = () => {} }) {
   const config = readJson(paths.config, null);
   if (!config?.token || !config?.apiUrl) return { status: "not_linked", sent: 0, requests: 0 };
 
@@ -22,7 +23,11 @@ export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChun
   /** Envoie toute la file ; n'avance les offsets qu'une fois tous leurs events acceptés. */
   async function flush() {
     while (queue.length > 0) {
-      if (requests > 0 && requests % REQUESTS_PER_MINUTE === 0) await sleep(60_000);
+      if (requests > 0 && requests % REQUESTS_PER_MINUTE === 0) {
+        heartbeat();
+        await sleep(60_000);
+      }
+      heartbeat();
       const batch = queue.slice(0, BATCH);
       const { status } = await postEvents({ apiUrl: config.apiUrl, token: config.token, events: batch, fetchImpl });
       requests++;
@@ -40,13 +45,21 @@ export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChun
 
   const files = listTranscripts(paths.projects);
   const existing = new Set(files);
-  for (const f of Object.keys(state.files)) if (!existing.has(f)) delete state.files[f];
+  // n'oublie que les fichiers disparus de ce dossier : un autre CLAUDE_CONFIG_DIR garde son état
+  const root = paths.projects + sep;
+  for (const f of Object.keys(state.files)) if (f.startsWith(root) && !existing.has(f)) delete state.files[f];
 
   for (const file of files) {
     let offset = state.files[file]?.offset ?? 0;
     let max = readChunk;
     for (;;) {
-      const { buf, start } = readFrom(file, offset, max);
+      let read;
+      try {
+        read = readFrom(file, offset, max);
+      } catch {
+        break; // illisible ou supprimé entre-temps : on passe au suivant
+      }
+      const { buf, start } = read;
       offset = start;
       if (buf.length === 0) break;
       const { events, consumed } = extractEvents(buf);

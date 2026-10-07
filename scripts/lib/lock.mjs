@@ -1,4 +1,4 @@
-import { closeSync, mkdirSync, openSync, readFileSync, statSync, unlinkSync, writeSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, readFileSync, statSync, unlinkSync, utimesSync, writeSync } from "node:fs";
 import { dirname } from "node:path";
 
 export const STALE_LOCK_MS = 15 * 60_000;
@@ -38,9 +38,20 @@ export function acquireLock(path, now = Date.now()) {
   }
 }
 
+/** Heartbeat : un sync long garde son lock frais pour ne pas être pris pour périmé. */
+export function touchLock(path) {
+  try {
+    const now = new Date();
+    utimesSync(path, now, now);
+  } catch {
+    // lock disparu : rien à rafraîchir
+  }
+}
+
+/** Ne supprime que notre propre lock, jamais celui d'un autre processus. */
 export function releaseLock(path) {
   try {
-    unlinkSync(path);
+    if (readFileSync(path, "utf8") === String(process.pid)) unlinkSync(path);
   } catch {
     // déjà libéré
   }

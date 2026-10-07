@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appendFileSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { readJson, writeJsonPrivate } from "../scripts/lib/store.mjs";
@@ -135,4 +135,34 @@ test("oublie l'état des fichiers supprimés", async () => {
   s.file("b.jsonl", assistantLine({ id: "m2" }));
   await runSync({ paths: s.paths, fetchImpl: fakeFetch().fetchImpl, sleep: noSleep });
   assert.deepEqual(Object.keys(readJson(s.paths.state, null).files), [join(s.dir, "b.jsonl")]);
+});
+
+test("garde l'état des transcripts d'un autre CLAUDE_CONFIG_DIR", async () => {
+  const s = setup();
+  const other = "/autre/claude/projects/p/x.jsonl";
+  writeJsonPrivate(s.paths.state, { files: { [other]: { offset: 42 } } });
+  s.file("a.jsonl", assistantLine({ id: "m1" }));
+  await runSync({ paths: s.paths, fetchImpl: fakeFetch().fetchImpl, sleep: noSleep });
+  assert.deepEqual(readJson(s.paths.state, null).files[other], { offset: 42 });
+});
+
+test("un transcript illisible n'empêche pas d'envoyer les autres", async () => {
+  const s = setup();
+  const locked = s.file("a.jsonl", assistantLine({ id: "m1" }));
+  chmodSync(locked, 0o000);
+  s.file("b.jsonl", assistantLine({ id: "m2" }));
+  const f = fakeFetch();
+  const r = await runSync({ paths: s.paths, fetchImpl: f.fetchImpl, sleep: noSleep });
+  chmodSync(locked, 0o600);
+  assert.equal(r.status, "ok");
+  assert.equal(r.sent, 1);
+});
+
+test("signale son activité avant chaque requête (heartbeat du lock)", async () => {
+  const s = setup();
+  s.file("a.jsonl", ...Array.from({ length: 1200 }, (_, i) => assistantLine({ id: `m${i}` })));
+  let beats = 0;
+  const r = await runSync({ paths: s.paths, fetchImpl: fakeFetch().fetchImpl, sleep: noSleep, heartbeat: () => beats++ });
+  assert.equal(r.requests, 3);
+  assert.ok(beats >= r.requests);
 });

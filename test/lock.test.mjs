@@ -3,7 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync as mk, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { STALE_LOCK_MS, acquireLock, releaseLock } from "../scripts/lib/lock.mjs";
+import { STALE_LOCK_MS, acquireLock, releaseLock, touchLock } from "../scripts/lib/lock.mjs";
 import { writeJsonPrivate } from "../scripts/lib/store.mjs";
 import { tmpHome } from "./helpers.mjs";
 
@@ -35,6 +35,23 @@ test("ne reprend pas un lock récent dont le processus est vivant", () => {
   const { paths } = tmpHome();
   mk(paths.home, { recursive: true });
   writeFileSync(paths.lock, String(process.pid));
+  assert.equal(acquireLock(paths.lock), false);
+});
+
+test("ne supprime pas un lock qui appartient à un autre processus", () => {
+  const { paths } = tmpHome();
+  mk(paths.home, { recursive: true });
+  writeFileSync(paths.lock, "999999");
+  releaseLock(paths.lock);
+  assert.equal(existsSync(paths.lock), true);
+});
+
+test("touchLock rafraîchit le lock pour qu'un sync long ne soit pas évincé", () => {
+  const { paths } = tmpHome();
+  acquireLock(paths.lock);
+  const old = (Date.now() - STALE_LOCK_MS - 60_000) / 1000;
+  utimesSync(paths.lock, old, old);
+  touchLock(paths.lock);
   assert.equal(acquireLock(paths.lock), false);
 });
 

@@ -44,6 +44,8 @@ export async function link({ args, paths, fetchImpl = fetch, startSync }) {
     handle: body.handle,
     linkedAt: new Date().toISOString(),
   });
+  // nouveau token = fenêtre d'import d'historique côté serveur : on relit tout (le serveur dédoublonne)
+  writeJsonPrivate(paths.state, { files: {} });
   startSync();
   return `✅ Claude Code est lié au royaume de ${body.handle}. Import de ton historique en cours, en arrière-plan.`;
 }

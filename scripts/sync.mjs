@@ -3,7 +3,7 @@
 // --spawn : relance le sync dans un processus détaché, qui survit à la fin de Claude Code.
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { acquireLock, releaseLock } from "./lib/lock.mjs";
+import { acquireLock, releaseLock, touchLock } from "./lib/lock.mjs";
 import { getPaths } from "./lib/paths.mjs";
 import { log } from "./lib/store.mjs";
 import { runSync } from "./lib/sync.mjs";
@@ -21,7 +21,7 @@ const paths = getPaths();
 try {
   if (acquireLock(paths.lock)) {
     try {
-      const r = await runSync({ paths });
+      const r = await runSync({ paths, heartbeat: () => touchLock(paths.lock) });
       if (r.status !== "not_linked") log(paths.log, `sync ${r.status} : ${r.sent} events, ${r.requests} requêtes`);
       if (r.status === "unauthorized") log(paths.log, "token refusé : relance /token-kingdom:link");
     } finally {

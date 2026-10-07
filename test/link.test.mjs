@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { statSync } from "node:fs";
 import { test } from "node:test";
 import { link, validApiUrl } from "../scripts/lib/link.mjs";
-import { readJson } from "../scripts/lib/store.mjs";
+import { readJson, writeJsonPrivate } from "../scripts/lib/store.mjs";
 import { tmpHome } from "./helpers.mjs";
 
 function okFetch(body = { token: "tk_abc", handle: "alice" }, status = 200) {
@@ -78,4 +78,11 @@ test("serveur injoignable : message clair", async () => {
     throw new TypeError("fetch failed");
   };
   assert.match(await link({ args: ["YRKCRANK"], paths, fetchImpl, startSync: () => {} }), /^❌ Impossible de joindre/);
+});
+
+test("une nouvelle liaison repart de zéro pour réimporter l'historique", async () => {
+  const { paths } = tmpHome();
+  writeJsonPrivate(paths.state, { files: { "/x/a.jsonl": { offset: 999 } } });
+  await link({ args: ["YRKCRANK"], paths, fetchImpl: okFetch().fetchImpl, startSync: () => {} });
+  assert.deepEqual(readJson(paths.state, null), { files: {} });
 });
