@@ -1,0 +1,76 @@
+import { postEvents } from "./api.mjs";
+import { extractEvents, toWire } from "./parse.mjs";
+import { READ_CHUNK, listTranscripts, readFrom } from "./scan.mjs";
+import { log, readJson, writeJsonPrivate } from "./store.mjs";
+
+export const BATCH = 500;
+export const REQUESTS_PER_MINUTE = 50;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChunk = READ_CHUNK }) {
+  const config = readJson(paths.config, null);
+  if (!config?.token || !config?.apiUrl) return { status: "not_linked", sent: 0, requests: 0 };
+
+  const state = readJson(paths.state, { files: {} });
+  const seen = new Set();
+  let queue = [];
+  let commits = [];
+  let sent = 0;
+  let requests = 0;
+
+  /** Envoie toute la file ; n'avance les offsets qu'une fois tous leurs events acceptés. */
+  async function flush() {
+    while (queue.length > 0) {
+      if (requests > 0 && requests % REQUESTS_PER_MINUTE === 0) await sleep(60_000);
+      const batch = queue.slice(0, BATCH);
+      const { status } = await postEvents({ apiUrl: config.apiUrl, token: config.token, events: batch, fetchImpl });
+      requests++;
+      if (status === 401) return "unauthorized";
+      if (status === 400) log(paths.log, `batch de ${batch.length} events rejeté (400), ignoré`);
+      else if (status < 200 || status >= 300) return "retry_later";
+      else sent += batch.length;
+      queue = queue.slice(BATCH);
+    }
+    for (const c of commits) state.files[c.file] = { offset: c.offset };
+    commits = [];
+    writeJsonPrivate(paths.state, state);
+    return "ok";
+  }
+
+  const files = listTranscripts(paths.projects);
+  const existing = new Set(files);
+  for (const f of Object.keys(state.files)) if (!existing.has(f)) delete state.files[f];
+
+  for (const file of files) {
+    let offset = state.files[file]?.offset ?? 0;
+    let max = readChunk;
+    for (;;) {
+      const { buf, start } = readFrom(file, offset, max);
+      offset = start;
+      if (buf.length === 0) break;
+      const { events, consumed } = extractEvents(buf);
+      if (consumed === 0) {
+        // ligne plus longue que le chunk : on relit plus large ; sinon ligne en cours d'écriture
+        if (buf.length < max) break;
+        max *= 4;
+        continue;
+      }
+      for (const e of events) {
+        if (seen.has(e.messageId)) continue;
+        seen.add(e.messageId);
+        queue.push(toWire(e));
+      }
+      offset += consumed;
+      commits.push({ file, offset });
+      if (queue.length >= BATCH) {
+        const r = await flush();
+        if (r !== "ok") return { status: r, sent, requests };
+      }
+      if (buf.length < max) break;
+    }
+  }
+
+  const status = await flush();
+  return { status, sent, requests };
+}
