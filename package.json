@@ -1,0 +1,7 @@
+{
+  "name": "token-kingdom-plugin",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node --test test/*.test.mjs" }
+}
