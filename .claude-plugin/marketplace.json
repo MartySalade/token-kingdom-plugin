@@ -1,0 +1,6 @@
+{
+  "name": "token-kingdom",
+  "description": "Plugin Token Kingdom : synchronise ton usage Claude Code avec ton royaume",
+  "owner": { "name": "Martin Mallein", "url": "https://github.com/MartySalade" },
+  "plugins": [{ "name": "token-kingdom", "source": "./" }]
+}

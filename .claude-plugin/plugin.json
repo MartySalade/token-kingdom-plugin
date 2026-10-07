@@ -1,0 +1,11 @@
+{
+  "name": "token-kingdom",
+  "displayName": "Token Kingdom",
+  "version": "0.1.0",
+  "description": "Tes tokens Claude Code construisent ton royaume sur token-kingdom.com",
+  "author": { "name": "Martin Mallein", "url": "https://github.com/MartySalade" },
+  "homepage": "https://token-kingdom.com",
+  "repository": "https://github.com/MartySalade/token-kingdom-plugin",
+  "license": "MIT",
+  "keywords": ["game", "usage", "tokens"]
+}
