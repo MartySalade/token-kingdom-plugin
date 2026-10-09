@@ -1,6 +1,6 @@
 # Token Kingdom — Claude Code plugin
 
-Your Claude Code tokens build your kingdom on [token-kingdom.com](https://token-kingdom.com).
+Your Claude Code tokens build your kingdom on [Token Kingdom](https://token-kingdom.malleinmartin.workers.dev).
 
 ## Installation
 

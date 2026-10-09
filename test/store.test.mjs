@@ -9,7 +9,7 @@ test("getPaths respecte TOKEN_KINGDOM_HOME et CLAUDE_CONFIG_DIR", () => {
   const p = getPaths({ TOKEN_KINGDOM_HOME: "/x/tk", CLAUDE_CONFIG_DIR: "/x/claude" });
   assert.equal(p.config, "/x/tk/config.json");
   assert.equal(p.projects, "/x/claude/projects");
-  assert.equal(DEFAULT_API_URL, "https://token-kingdom.com");
+  assert.equal(DEFAULT_API_URL, "https://token-kingdom.malleinmartin.workers.dev");
 });
 
 test("readJson renvoie le fallback si absent ou corrompu", () => {
