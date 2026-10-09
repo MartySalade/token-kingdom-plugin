@@ -7,13 +7,10 @@ Tes tokens Claude Code construisent ton royaume sur [token-kingdom.com](https://
 ```
 /plugin marketplace add MartySalade/token-kingdom-plugin
 /plugin install token-kingdom@token-kingdom
+/token-kingdom:village
 ```
 
-Puis connecte-toi sur token-kingdom.com/connect, génère un code et lance :
-
-```
-/token-kingdom:link <CODE>
-```
+`/token-kingdom:village` crée ton royaume la première fois (choix du pseudo dans le navigateur), puis ouvre ton village à chaque appel.
 
 Prérequis : Node.js ≥ 18 dans le `PATH`.
 
