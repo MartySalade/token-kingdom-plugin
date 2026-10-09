@@ -1,6 +1,6 @@
 ---
 name: village
-description: Ouvre ton village Token Kingdom (et crée ton royaume la première fois)
+description: Open your Token Kingdom village (and found your kingdom the first time)
 disable-model-invocation: true
 argument-hint: [url]
 allowed-tools: Bash(node *)
@@ -8,4 +8,4 @@ allowed-tools: Bash(node *)
 
 !`node "${CLAUDE_PLUGIN_ROOT}/scripts/village.mjs" $ARGUMENTS`
 
-Répète le message ci-dessus à l'utilisateur tel quel, sans rien ajouter.
+Repeat the message above to the user exactly as is, adding nothing.

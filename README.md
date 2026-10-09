@@ -1,6 +1,6 @@
-# Token Kingdom — plugin Claude Code
+# Token Kingdom — Claude Code plugin
 
-Tes tokens Claude Code construisent ton royaume sur [token-kingdom.com](https://token-kingdom.com).
+Your Claude Code tokens build your kingdom on [token-kingdom.com](https://token-kingdom.com).
 
 ## Installation
 
@@ -10,23 +10,23 @@ Tes tokens Claude Code construisent ton royaume sur [token-kingdom.com](https://
 /token-kingdom:village
 ```
 
-`/token-kingdom:village` crée ton royaume la première fois (choix du pseudo dans le navigateur), puis ouvre ton village à chaque appel.
+The first time, `/token-kingdom:village` founds your kingdom (you pick your handle in the browser); after that, each call opens your village.
 
-Prérequis : Node.js ≥ 18 dans le `PATH`.
+Requires Node.js ≥ 18 on your `PATH`.
 
-## Ce que le plugin envoie
+## What the plugin sends
 
-À la fin de chaque réponse de Claude, le plugin lit les nouveaux messages de `~/.claude/projects/**/*.jsonl` et envoie pour chacun :
+At the end of each Claude reply, the plugin reads the new messages in `~/.claude/projects/**/*.jsonl` and sends, for each one:
 
-- un hash SHA-256 de l'id du message ;
-- le nom du modèle ;
-- les 4 compteurs de tokens (input, output, cache creation, cache read) ;
-- l'horodatage.
+- a SHA-256 hash of the message id;
+- the model name;
+- the 4 token counters (input, output, cache creation, cache read);
+- the timestamp.
 
-**Jamais** de contenu, de prompt, de chemin, de nom de projet ou de fichier.
+**Never** any content, prompt, path, project name or file name.
 
-## Fichiers locaux
+## Local files
 
-`~/.token-kingdom/` contient `config.json` (ton token, en 0600), `state.json` (la position de lecture de chaque transcript) et `sync.log`.
+`~/.token-kingdom/` holds `config.json` (your token, mode 0600), `state.json` (the read position in each transcript) and `sync.log`.
 
-Pour se délier : supprime `~/.token-kingdom/config.json` et révoque le token sur le site.
+To unlink: delete `~/.token-kingdom/config.json` and revoke the token on the site.

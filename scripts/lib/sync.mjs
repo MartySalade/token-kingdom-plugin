@@ -32,7 +32,7 @@ export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChun
       const { status } = await postEvents({ apiUrl: config.apiUrl, token: config.token, events: batch, fetchImpl });
       requests++;
       if (status === 401) return "unauthorized";
-      if (status === 400) log(paths.log, `batch de ${batch.length} events rejeté (400), ignoré`);
+      if (status === 400) log(paths.log, `batch of ${batch.length} events rejected (400), skipped`);
       else if (status < 200 || status >= 300) return "retry_later";
       else sent += batch.length;
       queue = queue.slice(BATCH);

@@ -21,8 +21,8 @@ export function openUrl(url) {
   }
 }
 
-const unreachable = (apiUrl) => `❌ Impossible de joindre ${apiUrl}. Vérifie ta connexion et réessaie.`;
-const RATE_LIMITED = "❌ Trop de tentatives, réessaie dans une minute.";
+const unreachable = (apiUrl) => `❌ Couldn't reach ${apiUrl}. Check your connection and try again.`;
+const RATE_LIMITED = "❌ Too many attempts, try again in a minute.";
 
 async function post(fetchImpl, url, headers = {}) {
   try {
@@ -39,7 +39,7 @@ async function post(fetchImpl, url, headers = {}) {
   }
 }
 
-const unexpected = (status) => `❌ Réponse inattendue du serveur (HTTP ${status}). Réessaie plus tard.`;
+const unexpected = (status) => `❌ Unexpected server response (HTTP ${status}). Try again later.`;
 
 function sameOrigin(loginUrl, apiUrl) {
   try {
@@ -54,25 +54,25 @@ export async function village({ args, paths, fetchImpl = fetch, startSync, openU
   if (existsSync(paths.config)) {
     const config = readJson(paths.config, null);
     if (typeof config?.token !== "string" || !config.token) {
-      return "❌ Config locale illisible (~/.token-kingdom/config.json). Supprime-la puis relance /token-kingdom:village.";
+      return "❌ Local config is unreadable (~/.token-kingdom/config.json). Delete it, then run /token-kingdom:village again.";
     }
     const apiUrl = config.apiUrl ?? DEFAULT_API_URL;
-    if (typeof apiUrl !== "string" || !validApiUrl(apiUrl)) return `❌ URL refusée dans la config : ${apiUrl}`;
+    if (typeof apiUrl !== "string" || !validApiUrl(apiUrl)) return `❌ URL rejected in the config: ${apiUrl}`;
     const r = await post(fetchImpl, `${apiUrl}/api/cli/login`, { authorization: `Bearer ${config.token}` });
     if (!r || r.res.status >= 500) return unreachable(apiUrl);
     if (r.res.status === 401) {
-      return "❌ Ce Claude Code n'est plus lié (token révoqué). Supprime ~/.token-kingdom/config.json puis relance /token-kingdom:village pour créer un nouveau royaume.";
+      return "❌ This Claude Code is no longer linked (token revoked). Delete ~/.token-kingdom/config.json, then run /token-kingdom:village again to found a new kingdom.";
     }
     if (r.res.status === 429) return RATE_LIMITED;
     if (!r.res.ok || typeof r.body?.loginUrl !== "string") return unexpected(r.res.status);
-    if (!sameOrigin(r.body.loginUrl, apiUrl)) return "❌ Lien de connexion refusé (origine inattendue).";
+    if (!sameOrigin(r.body.loginUrl, apiUrl)) return "❌ Sign-in link rejected (unexpected origin).";
     open(r.body.loginUrl);
-    return `✅ Ton village s'ouvre dans le navigateur : ${r.body.loginUrl}`;
+    return `✅ Your village is opening in the browser: ${r.body.loginUrl}`;
   }
 
   const [rawUrl = DEFAULT_API_URL] = args;
   const apiUrl = rawUrl.trim().replace(/\/+$/, "");
-  if (!validApiUrl(apiUrl)) return `❌ URL refusée : ${apiUrl} (https ou http://localhost uniquement).`;
+  if (!validApiUrl(apiUrl)) return `❌ URL rejected: ${apiUrl} (https or http://localhost only).`;
 
   const r = await post(fetchImpl, `${apiUrl}/api/cli/start`);
   if (!r || r.res.status >= 500) return unreachable(apiUrl);
@@ -85,8 +85,8 @@ export async function village({ args, paths, fetchImpl = fetch, startSync, openU
   writeJsonPrivate(paths.state, { files: {} });
   startSync();
   if (!sameOrigin(b.loginUrl, apiUrl)) {
-    return "❌ Lien de connexion refusé (origine inattendue). Ton royaume est créé : relance /token-kingdom:village.";
+    return "❌ Sign-in link rejected (unexpected origin). Your kingdom has been founded: run /token-kingdom:village again.";
   }
   open(b.loginUrl);
-  return `✅ Ton royaume est créé. Choisis ton pseudo dans le navigateur (lien valable 2 min) : ${b.loginUrl}. Import de ton historique en cours.`;
+  return `✅ Your kingdom has been founded. Pick your handle in the browser (link valid for 2 min): ${b.loginUrl}. Importing your history now.`;
 }

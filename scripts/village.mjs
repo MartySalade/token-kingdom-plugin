@@ -10,6 +10,6 @@ const startSync = () => spawn(process.execPath, [syncScript], { detached: true, 
 try {
   console.log(await village({ args: process.argv.slice(2), paths: getPaths(), startSync, openUrl }));
 } catch (e) {
-  console.log(`❌ Erreur inattendue : ${e?.message ?? e}`);
+  console.log(`❌ Unexpected error: ${e?.message ?? e}`);
 }
 process.exit(0);

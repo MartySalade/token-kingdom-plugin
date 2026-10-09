@@ -34,7 +34,7 @@ test("création : config 0600, état remis à zéro, sync lancée, navigateur ou
   const f = mockFetch(START);
   const d = deps(f);
   const msg = await village({ args: [], paths, ...d });
-  assert.match(msg, /^✅ Ton royaume est créé/);
+  assert.match(msg, /^✅ Your kingdom has been founded/);
   assert.ok(msg.includes(LOGIN));
   assert.equal(f.calls[0].url, "https://token-kingdom.com/api/cli/start");
   assert.equal(f.calls[0].init.method, "POST");
@@ -57,7 +57,7 @@ test("reconnexion : Bearer, ouvre le lien, pas de sync ni de réécriture", asyn
   const f = mockFetch({ loginUrl: local });
   const d = deps(f);
   const msg = await village({ args: [], paths, ...d });
-  assert.match(msg, /^✅ Ton village s'ouvre dans le navigateur/);
+  assert.match(msg, /^✅ Your village is opening in the browser/);
   assert.ok(msg.includes(local));
   assert.equal(f.calls[0].url, "http://localhost:3000/api/cli/login");
   assert.equal(f.calls[0].init.headers.authorization, "Bearer tk_old");
@@ -71,7 +71,7 @@ test("401 : token révoqué, rien ouvert, config gardée", async () => {
   writeJsonPrivate(paths.config, { apiUrl: "https://token-kingdom.com", token: "tk_old", handle: "a" });
   const d = deps(mockFetch({ error: "invalid_token" }, 401));
   const msg = await village({ args: [], paths, ...d });
-  assert.match(msg, /^❌ Ce Claude Code n'est plus lié/);
+  assert.match(msg, /^❌ This Claude Code is no longer linked/);
   assert.equal(d.opened.length, 0);
   assert.equal(readJson(paths.config, null).token, "tk_old");
 });
@@ -80,7 +80,7 @@ test("429 : trop de tentatives, pas de config", async () => {
   const { paths } = tmpHome();
   const d = deps(mockFetch({ error: "rate_limited" }, 429));
   const msg = await village({ args: [], paths, ...d });
-  assert.match(msg, /^❌ Trop de tentatives/);
+  assert.match(msg, /^❌ Too many attempts/);
   assert.equal(readJson(paths.config, null), null);
   assert.equal(d.started, 0);
 });
@@ -91,9 +91,9 @@ test("réseau KO et 5xx : impossible de joindre", async () => {
     throw new TypeError("fetch failed");
   };
   const d = deps({ fetchImpl: ko });
-  assert.match(await village({ args: [], paths, ...d }), /^❌ Impossible de joindre https:\/\/token-kingdom\.com/);
+  assert.match(await village({ args: [], paths, ...d }), /^❌ Couldn't reach https:\/\/token-kingdom\.com/);
   const d2 = deps(mockFetch({}, 503));
-  assert.match(await village({ args: [], paths, ...d2 }), /^❌ Impossible de joindre/);
+  assert.match(await village({ args: [], paths, ...d2 }), /^❌ Couldn't reach/);
   assert.equal(readJson(paths.config, null), null);
 });
 
@@ -101,7 +101,7 @@ test("URL refusée sans appel réseau", async () => {
   const { paths } = tmpHome();
   const f = mockFetch(START);
   const msg = await village({ args: ["http://evil.com"], paths, ...deps(f) });
-  assert.match(msg, /^❌ URL refusée/);
+  assert.match(msg, /^❌ URL rejected/);
   assert.equal(f.calls.length, 0);
 });
 
@@ -129,7 +129,7 @@ test("réponse de création sans token : impossible de joindre, pas de config", 
   assert.equal(readJson(paths.config, null), null);
 });
 
-const UNREADABLE = /^❌ Config locale illisible/;
+const UNREADABLE = /^❌ Local config is unreadable/;
 
 test("config corrompue ou sans token : pas de /start", async () => {
   for (const content of ["{pas du json", JSON.stringify({ apiUrl: "https://token-kingdom.com" })]) {
@@ -148,7 +148,7 @@ test("config avec token sans apiUrl : reconnexion sur l'URL par défaut", async 
   const { paths } = tmpHome();
   writeJsonPrivate(paths.config, { token: "tk_old" });
   const f = mockFetch({ loginUrl: LOGIN });
-  assert.match(await village({ args: [], paths, ...deps(f) }), /^✅ Ton village/);
+  assert.match(await village({ args: [], paths, ...deps(f) }), /^✅ Your village/);
   assert.equal(f.calls[0].url, "https://token-kingdom.com/api/cli/login");
 });
 
@@ -156,12 +156,12 @@ test("statut inattendu ou corps invalide : réponse inattendue", async () => {
   for (const [body, status] of [[{}, 404], [{ nope: 1 }, 200]]) {
     const { paths } = tmpHome();
     const msg = await village({ args: [], paths, ...deps(mockFetch(body, status)) });
-    assert.match(msg, new RegExp(`^❌ Réponse inattendue du serveur \\(HTTP ${status}\\)`));
+    assert.match(msg, new RegExp(`^❌ Unexpected server response \\(HTTP ${status}\\)`));
     assert.equal(readJson(paths.config, null), null);
   }
   const { paths } = tmpHome();
   writeJsonPrivate(paths.config, { apiUrl: "https://token-kingdom.com", token: "t" });
-  assert.match(await village({ args: [], paths, ...deps(mockFetch({}, 200)) }), /Réponse inattendue du serveur \(HTTP 200\)/);
+  assert.match(await village({ args: [], paths, ...deps(mockFetch({}, 200)) }), /Unexpected server response \(HTTP 200\)/);
 });
 
 test("loginUrl d'une autre origine : refusé, pas ouvert, config écrite à la création", async () => {
@@ -169,14 +169,14 @@ test("loginUrl d'une autre origine : refusé, pas ouvert, config écrite à la c
     const { paths } = tmpHome();
     const d = deps(mockFetch({ ...START, loginUrl: bad }));
     const msg = await village({ args: [], paths, ...d });
-    assert.match(msg, /^❌ Lien de connexion refusé \(origine inattendue\)\. Ton royaume est créé : relance \/token-kingdom:village\./);
+    assert.match(msg, /^❌ Sign-in link rejected \(unexpected origin\)\. Your kingdom has been founded: run \/token-kingdom:village again\./);
     assert.equal(d.opened.length, 0);
     assert.equal(readJson(paths.config, null).token, "tk_abc");
   }
   const { paths } = tmpHome();
   writeJsonPrivate(paths.config, { apiUrl: "https://token-kingdom.com", token: "t" });
   const d = deps(mockFetch({ loginUrl: "https://evil.com/x" }));
-  assert.equal(await village({ args: [], paths, ...d }), "❌ Lien de connexion refusé (origine inattendue).");
+  assert.equal(await village({ args: [], paths, ...d }), "❌ Sign-in link rejected (unexpected origin).");
   assert.equal(d.opened.length, 0);
 });
 
@@ -184,6 +184,6 @@ test("apiUrl invalide dans la config : pas d'envoi du token", async () => {
   const { paths } = tmpHome();
   writeJsonPrivate(paths.config, { apiUrl: "http://evil.com", token: "tk_old" });
   const f = mockFetch({ loginUrl: LOGIN });
-  assert.equal(await village({ args: [], paths, ...deps(f) }), "❌ URL refusée dans la config : http://evil.com");
+  assert.equal(await village({ args: [], paths, ...deps(f) }), "❌ URL rejected in the config: http://evil.com");
   assert.equal(f.calls.length, 0);
 });

@@ -22,8 +22,8 @@ try {
   if (acquireLock(paths.lock)) {
     try {
       const r = await runSync({ paths, heartbeat: () => touchLock(paths.lock) });
-      if (r.status !== "not_linked") log(paths.log, `sync ${r.status} : ${r.sent} events, ${r.requests} requêtes`);
-      if (r.status === "unauthorized") log(paths.log, "token refusé : relance /token-kingdom:link");
+      if (r.status !== "not_linked") log(paths.log, `sync ${r.status}: ${r.sent} events, ${r.requests} requests`);
+      if (r.status === "unauthorized") log(paths.log, "token rejected: delete ~/.token-kingdom/config.json, then run /token-kingdom:village again");
     } finally {
       releaseLock(paths.lock);
     }
