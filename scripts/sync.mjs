@@ -30,7 +30,7 @@ try {
   }
 } catch (e) {
   try {
-    log(paths.log, `erreur : ${e?.message ?? e}`);
+    log(paths.log, `error: ${e?.message ?? e}`);
   } catch {
     // rien à faire
   }

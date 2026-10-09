@@ -39,6 +39,10 @@ async function post(fetchImpl, url, headers = {}) {
   }
 }
 
+// un second /start créerait un second royaume : le token se copie, il ne se recrée pas
+const SECOND_COMPUTER =
+  "Using Claude Code on another computer? Copy ~/.token-kingdom/config.json to it instead of running this command there, or you'll found a second kingdom.";
+
 const unexpected = (status) => `❌ Unexpected server response (HTTP ${status}). Try again later.`;
 
 function sameOrigin(loginUrl, apiUrl) {
@@ -88,5 +92,5 @@ export async function village({ args, paths, fetchImpl = fetch, startSync, openU
     return "❌ Sign-in link rejected (unexpected origin). Your kingdom has been founded: run /token-kingdom:village again.";
   }
   open(b.loginUrl);
-  return `✅ Your kingdom has been founded. Pick your handle in the browser (link valid for 2 min): ${b.loginUrl}. Importing your history now.`;
+  return `✅ Your kingdom has been founded. Pick your handle in the browser (link valid for 10 min): ${b.loginUrl}. Importing your history now.\n${SECOND_COMPUTER}`;
 }

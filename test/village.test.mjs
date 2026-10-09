@@ -36,8 +36,18 @@ test("création : config 0600, état remis à zéro, sync lancée, navigateur ou
   const msg = await village({ args: [], paths, ...d });
   assert.match(msg, /^✅ Your kingdom has been founded/);
   assert.ok(msg.includes(LOGIN));
+  assert.match(msg, /link valid for 10 min/);
+  const [first, second, ...rest] = msg.split("\n");
+  assert.ok(first.includes(LOGIN));
+  assert.equal(
+    second,
+    "Using Claude Code on another computer? Copy ~/.token-kingdom/config.json to it instead of running this command there, or you'll found a second kingdom.",
+  );
+  assert.equal(rest.length, 0);
   assert.equal(f.calls[0].url, "https://token-kingdom.com/api/cli/start");
   assert.equal(f.calls[0].init.method, "POST");
+  assert.equal(f.calls[0].init.headers["content-type"], "application/json");
+  assert.equal(f.calls[0].init.headers.origin, undefined);
   const cfg = readJson(paths.config, null);
   assert.equal(cfg.token, "tk_abc");
   assert.equal(cfg.handle, "joueur-ab12");
@@ -61,6 +71,8 @@ test("reconnexion : Bearer, ouvre le lien, pas de sync ni de réécriture", asyn
   assert.ok(msg.includes(local));
   assert.equal(f.calls[0].url, "http://localhost:3000/api/cli/login");
   assert.equal(f.calls[0].init.headers.authorization, "Bearer tk_old");
+  assert.equal(f.calls[0].init.headers["content-type"], "application/json");
+  assert.equal(f.calls[0].init.headers.origin, undefined);
   assert.deepEqual(d.opened, [local]);
   assert.equal(d.started, 0);
   assert.equal(readJson(paths.config, null).token, "tk_old");

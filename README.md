@@ -29,4 +29,8 @@ At the end of each Claude reply, the plugin reads the new messages in `~/.claude
 
 `~/.token-kingdom/` holds `config.json` (your token, mode 0600), `state.json` (the read position in each transcript) and `sync.log`.
 
-To unlink: delete `~/.token-kingdom/config.json` and revoke the token on the site.
+`config.json` is a secret: anyone who has it can sign in to your kingdom and send usage in your name. Don't share it or commit it.
+
+Using Claude Code on another computer? Copy ~/.token-kingdom/config.json to it instead of running this command there, or you'll found a second kingdom.
+
+To unlink this computer: delete `~/.token-kingdom/config.json`.
