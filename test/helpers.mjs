@@ -18,10 +18,12 @@ export function assistantLine({
   cacheCreation = 1000,
   cacheRead = 50_000,
   timestamp = "2026-10-07T12:00:00.000Z",
+  sessionId,
 } = {}) {
   return JSON.stringify({
     type: "assistant",
     timestamp,
+    ...(sessionId ? { sessionId } : {}),
     message: {
       id,
       model,

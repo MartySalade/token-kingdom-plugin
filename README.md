@@ -19,11 +19,14 @@ Requires Node.js ≥ 18 on your `PATH`.
 At the end of each Claude reply, the plugin reads the new messages in `~/.claude/projects/**/*.jsonl` and sends, for each one:
 
 - a SHA-256 hash of the message id;
+- a SHA-256 hash of its session id;
 - the model name;
 - the 4 token counters (input, output, cache creation, cache read);
 - the timestamp.
 
-**Never** any content, prompt, path, project name or file name.
+It also sends the **title of each session** (the one Claude Code generates, or the one you gave it with `/rename`), so your village can list your sessions and what each one earned you. Titles are shown only to you, never on your public village.
+
+**Never** any prompt, reply, code, path, project name or file name.
 
 ## Local files
 

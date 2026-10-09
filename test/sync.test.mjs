@@ -166,3 +166,26 @@ test("signale son activité avant chaque requête (heartbeat du lock)", async ()
   assert.equal(r.requests, 3);
   assert.ok(beats >= r.requests);
 });
+
+test("envoie les titres de session avec le lot, et un titre seul sans nouvel event", async () => {
+  const s = setup();
+  const f = s.file(
+    "a.jsonl",
+    JSON.stringify({ type: "ai-title", aiTitle: "Fix login bug", sessionId: "s1" }),
+    assistantLine({ id: "m1", sessionId: "s1" }),
+  );
+  const f1 = fakeFetch();
+  await runSync({ paths: s.paths, fetchImpl: f1.fetchImpl, sleep: noSleep });
+  const body = f1.calls[0].body;
+  assert.equal(body.sessions.length, 1);
+  assert.equal(body.sessions[0].title, "Fix login bug");
+  assert.equal(body.sessions[0].id, body.events[0].session);
+
+  // Claude Code réécrit le titre plus tard : il part seul, sans event
+  appendFileSync(f, `${JSON.stringify({ type: "ai-title", aiTitle: "Fix login and signup", sessionId: "s1" })}\n`);
+  const f2 = fakeFetch();
+  assert.deepEqual(await runSync({ paths: s.paths, fetchImpl: f2.fetchImpl, sleep: noSleep }), { status: "ok", sent: 0, requests: 1 });
+  assert.deepEqual(f2.calls[0].body.events, []);
+  assert.equal(f2.calls[0].body.sessions[0].title, "Fix login and signup");
+});
+

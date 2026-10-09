@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
-import { extractEvents, toWire } from "../scripts/lib/parse.mjs";
+import { extractEvents, sessionHash, toWire } from "../scripts/lib/parse.mjs";
 import { assistantLine } from "./helpers.mjs";
 
 const buf = (...lines) => Buffer.from(lines.join(""));
@@ -11,6 +11,7 @@ test("extrait un message assistant avec son usage", () => {
   assert.equal(events.length, 1);
   assert.deepEqual(events[0], {
     messageId: "msg_a",
+    sessionId: null,
     model: "claude-opus-5-5",
     input: 2,
     output: 100,
@@ -33,7 +34,7 @@ test("ne consomme pas une dernière ligne incomplète", () => {
 });
 
 test("ne consomme rien sans aucun saut de ligne", () => {
-  assert.deepEqual(extractEvents(buf(assistantLine())), { events: [], consumed: 0 });
+  assert.deepEqual(extractEvents(buf(assistantLine())), { events: [], titles: {}, consumed: 0 });
 });
 
 test("ignore les autres types, le JSON invalide et les messages sans usage ou sans id", () => {
@@ -83,4 +84,31 @@ test("toWire remplace l'id par son SHA-256 hex", () => {
   assert.equal(w.idHash, createHash("sha256").update("msg_a").digest("hex"));
   assert.equal("messageId" in w, false);
   assert.equal(w.output, 100);
+});
+
+test("relève les titres de session ; un titre donné par l'utilisateur l'emporte", () => {
+  const lines = [
+    JSON.stringify({ type: "ai-title", aiTitle: "Fix login bug", sessionId: "s1" }),
+    JSON.stringify({ type: "custom-title", customTitle: "Auth refactor", sessionId: "s2" }),
+    JSON.stringify({ type: "ai-title", aiTitle: "Generated later", sessionId: "s2" }),
+    JSON.stringify({ type: "ai-title", aiTitle: "  ", sessionId: "s3" }),
+    JSON.stringify({ type: "ai-title", aiTitle: "x".repeat(300), sessionId: "s4" }),
+    assistantLine({ id: "m1", sessionId: "s1" }),
+  ];
+  const { events, titles } = extractEvents(buf(`${lines.join("\n")}\n`));
+  assert.deepEqual(Object.keys(titles).sort(), ["s1", "s2", "s4"]);
+  assert.equal(titles.s1, "Fix login bug");
+  assert.equal(titles.s2, "Auth refactor");
+  assert.equal(titles.s4.length, 120);
+  assert.equal(events[0].sessionId, "s1");
+});
+
+test("toWire envoie l'empreinte de session, jamais l'identifiant brut", () => {
+  const [e] = extractEvents(buf(`${assistantLine({ id: "m1", sessionId: "abc" })}\n`)).events;
+  const w = toWire(e);
+  assert.equal(w.session, sessionHash("abc"));
+  assert.match(w.session, /^[0-9a-f]{64}$/);
+  assert.ok(!JSON.stringify(w).includes("abc"));
+  const [e2] = extractEvents(buf(`${assistantLine({ id: "m2" })}\n`)).events;
+  assert.equal("session" in toWire(e2), false);
 });
