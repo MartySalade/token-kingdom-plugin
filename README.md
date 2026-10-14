@@ -12,6 +12,8 @@ Your Claude Code tokens build your kingdom on [Token Kingdom](https://token-king
 
 The first time, `/token-kingdom:village` founds your kingdom (you pick your handle in the browser); after that, each call opens your village.
 
+To play on your phone, run `/token-kingdom:mobile`: a QR code opens in your browser, scan it with your phone (valid for 2 min).
+
 Requires Node.js ≥ 18 on your `PATH`.
 
 ## What the plugin sends
