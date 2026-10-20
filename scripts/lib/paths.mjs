@@ -1,7 +1,7 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-// adresse Cloudflare tant que le domaine n'est pas acheté (une ligne à changer pour basculer)
+// adresse de l'API de prod
 export const DEFAULT_API_URL = "https://token-kingdom.com";
 
 export function getPaths(env = process.env) {
