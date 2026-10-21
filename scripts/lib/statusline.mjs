@@ -30,8 +30,8 @@ function writeSettings(file, settings) {
 
 /**
  * Branche (ou débranche) les gains du jour dans la status line de Claude Code.
- * mode « auto » : seulement s'il n'y a pas de status line (premier lancement). « on » : enveloppe aussi l'existante.
- * « off » : rétablit l'ancienne. Renvoie le message à afficher.
+ * mode « on » : pose la nôtre, en enveloppant l'existante s'il y en a une (elle est gardée). « off » : rétablit
+ * l'ancienne. Renvoie le message à afficher.
  */
 export function setupStatusLine({ paths, mode }) {
   let settings = {};
@@ -60,9 +60,6 @@ export function setupStatusLine({ paths, mode }) {
 
   if (cur?.command === ours) return "✅ Your status line already shows your daily gains.";
   if (cur?.command && readsGains(cur.command)) return "✅ Your status line already reads your daily gains.";
-  if (cur?.command && mode === "auto") {
-    return "ℹ️ To see today's earnings in your status line, run /token-kingdom:statusline (your current one is kept).";
-  }
 
   mkdirSync(dirname(paths.statuslineScript), { recursive: true, mode: 0o700 });
   copyFileSync(SOURCE, paths.statuslineScript);

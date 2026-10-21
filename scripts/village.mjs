@@ -16,7 +16,7 @@ try {
   // premier lancement réussi : les gains du jour dans la status line, sans rien de plus à taper
   if (first && existsSync(paths.config)) {
     try {
-      msg += `\n${setupStatusLine({ paths, mode: "auto" })}`;
+      msg += `\n${setupStatusLine({ paths, mode: "on" })}`;
     } catch {
       // la status line est un bonus
     }

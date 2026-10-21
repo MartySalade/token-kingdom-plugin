@@ -34,8 +34,8 @@ Sync is automatic: nothing to run. It starts at the end of every Claude reply an
 
 Today's earnings appear in your Claude Code status line, e.g. `💰340 🪵90 🪨40` (numbers in gray, empty until you earn something that day). Cmd+click opens your village in terminals with link support (iTerm2, Ghostty, WezTerm, Kitty).
 
-- **New install**: `/token-kingdom:village` sets it up on first run, if you have no status line yet.
-- **Already have a status line**: run `/token-kingdom:statusline`. Yours is kept and the gains are added after it. `/token-kingdom:statusline off` restores it (your `settings.json` is backed up once as `settings.json.token-kingdom.bak`).
+- **Automatic**: `/token-kingdom:village` sets it up on first run. If you already had a status line, it is kept and the gains are added after it. Your `settings.json` is backed up once as `settings.json.token-kingdom.bak`.
+- **Already installed, or to undo**: run `/token-kingdom:statusline` to add it, `/token-kingdom:statusline off` to restore your previous one.
 - **Hand-made status line**: read `~/.token-kingdom/statusline.txt` in your own script.
 
 ## 🔒 Privacy

@@ -17,27 +17,20 @@ function withSettings(settings) {
 const run = (paths, input = "{}") =>
   spawnSync(process.execPath, [paths.statuslineScript], { input, encoding: "utf8", env: { ...process.env, TOKEN_KINGDOM_HOME: paths.home } }).stdout;
 
-test("auto : pas de status line → la nôtre est posée, le reste des réglages intact", () => {
+test("pas de status line → la nôtre est posée, le reste des réglages intact", () => {
   const { paths } = withSettings({ theme: "dark" });
-  assert.match(setupStatusLine({ paths, mode: "auto" }), /^✅ Your status line now shows/);
+  assert.match(setupStatusLine({ paths, mode: "on" }), /^✅ Your status line now shows/);
   assert.deepEqual(settingsOf(paths), { theme: "dark", statusLine: { type: "command", command: ours(paths) } });
   assert.ok(existsSync(`${paths.settings}.token-kingdom.bak`));
 });
 
-test("auto : pas de fichier de réglages → créé", () => {
+test("pas de fichier de réglages → créé", () => {
   const { paths } = withSettings(undefined);
-  setupStatusLine({ paths, mode: "auto" });
+  setupStatusLine({ paths, mode: "on" });
   assert.equal(settingsOf(paths).statusLine.command, ours(paths));
 });
 
-test("auto : une status line existante n'est pas touchée, on propose la commande", () => {
-  const { paths } = withSettings({ statusLine: { type: "command", command: "bash /x/mine.sh" } });
-  const before = readFileSync(paths.settings, "utf8");
-  assert.match(setupStatusLine({ paths, mode: "auto" }), /run \/token-kingdom:statusline/);
-  assert.equal(readFileSync(paths.settings, "utf8"), before);
-});
-
-test("on : enveloppe l'existante, off la rétablit", () => {
+test("status line existante : enveloppée, off la rétablit", () => {
   const original = { type: "command", command: "echo mine" };
   const { paths } = withSettings({ statusLine: original });
   assert.match(setupStatusLine({ paths, mode: "on" }), /yours is kept/);
@@ -70,7 +63,7 @@ test("idempotent, et une status line qui lit déjà les gains est laissée", () 
 
 test("réglages illisibles : rien n'est écrit", () => {
   const { paths } = withSettings("{ pas du json");
-  assert.match(setupStatusLine({ paths, mode: "auto" }), /^❌/);
+  assert.match(setupStatusLine({ paths, mode: "on" }), /^❌/);
   assert.equal(readFileSync(paths.settings, "utf8"), "{ pas du json");
 });
 
