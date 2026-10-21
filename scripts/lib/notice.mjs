@@ -23,7 +23,7 @@ const localDay = (now) => {
 export function formatSegment(total, url) {
   const parts = ICONS.map(([k, icon]) => [Math.floor(num(total[k])), icon]).filter(([n]) => n >= 1);
   if (parts.length === 0) return "";
-  const text = parts.map(([n, icon]) => `${icon} ${GREY}${fmt(n)}${RESET}`).join(" ");
+  const text = parts.map(([n, icon]) => `${icon}${GREY}${fmt(n)}${RESET}`).join(" ");
   return `\x1b]8;;${url}\x1b\\${NO_UNDERLINE}${text}\x1b]8;;\x1b\\`;
 }
 
