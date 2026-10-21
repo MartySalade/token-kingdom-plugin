@@ -14,6 +14,9 @@ export function getPaths(env = process.env) {
     state: join(home, "state.json"),
     today: join(home, "today.json"),
     segment: join(home, "statusline.txt"),
+    settings: join(claude, "settings.json"),
+    statuslineScript: join(home, "statusline.mjs"),
+    statuslineInner: join(home, "statusline-inner.json"),
     log: join(home, "sync.log"),
     lock: join(home, "sync.lock"),
   };

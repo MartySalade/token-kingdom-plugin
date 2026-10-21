@@ -1,7 +1,7 @@
 {
   "name": "token-kingdom",
   "displayName": "Token Kingdom",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Your Claude Code tokens build your kingdom on Token Kingdom",
   "author": { "name": "Martin Mallein", "url": "https://github.com/MartySalade" },
   "homepage": "https://token-kingdom.com",
