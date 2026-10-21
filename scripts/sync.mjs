@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { acquireLock, releaseLock, touchLock } from "./lib/lock.mjs";
 import { getPaths } from "./lib/paths.mjs";
-import { takeNotice } from "./lib/notice.mjs";
+import { takeNotice, writeSegment } from "./lib/notice.mjs";
 import { log, readJson } from "./lib/store.mjs";
 import { runSync } from "./lib/sync.mjs";
 
@@ -13,7 +13,10 @@ if (process.argv.includes("--spawn")) {
   // gains déjà synchronisés par un tour précédent : une ligne grise, jamais bloquante
   try {
     const p = getPaths();
-    const msg = takeNotice({ paths: p, quiet: readJson(p.config, null)?.quiet === true });
+    const cfg = readJson(p.config, null);
+    writeSegment(p);
+    // status line : le total du jour est affiché en bas, pas de message à chaque tour
+    const msg = takeNotice({ paths: p, quiet: cfg?.quiet === true || cfg?.statusline === true });
     if (msg) process.stdout.write(JSON.stringify({ systemMessage: msg }));
   } catch {
     // pas de message
