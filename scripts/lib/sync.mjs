@@ -2,7 +2,7 @@ import { postEvents } from "./api.mjs";
 import { extractEvents, sessionHash, toWire } from "./parse.mjs";
 import { sep } from "node:path";
 import { READ_CHUNK, listTranscripts, readFrom } from "./scan.mjs";
-import { addGains } from "./notice.mjs";
+import { addSessionGains, shareGains } from "./gains.mjs";
 import { log, readJson, writeJsonPrivate } from "./store.mjs";
 
 export const BATCH = 500;
@@ -41,7 +41,7 @@ export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChun
       else if (status < 200 || status >= 300) return "retry_later";
       else {
         sent += batch.length;
-        addGains(paths, gains);
+        addSessionGains(paths.sessions, shareGains(batch, gains));
       }
       queue = queue.slice(BATCH);
       for (const s of sessions) titles.delete(s.id);

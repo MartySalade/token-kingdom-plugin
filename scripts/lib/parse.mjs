@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { sessionHash } from "./gains.mjs";
 
 const MAX_COUNT = 1e10;
 const MAX_MODEL_LENGTH = 100;
@@ -53,8 +54,7 @@ export function extractEvents(buf) {
 
 const sha256 = (s) => createHash("sha256").update(s).digest("hex");
 
-/** Empreinte de session envoyée au serveur (l'identifiant brut ne quitte pas la machine). */
-export const sessionHash = (sessionId) => sha256(`session:${sessionId}`);
+export { sessionHash };
 
 export function toWire({ messageId, sessionId, ...rest }) {
   return { idHash: sha256(messageId), ...rest, ...(sessionId ? { session: sessionHash(sessionId) } : {}) };

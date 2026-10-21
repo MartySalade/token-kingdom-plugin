@@ -28,15 +28,15 @@ That's it. The first run founds your kingdom (pick your handle in the browser). 
 | --- | --- |
 | `/token-kingdom:village` | Founds your kingdom the first time, then opens your village |
 | `/token-kingdom:mobile` | Opens a QR code: scan it to play on your phone (valid 2 min) |
-| `/token-kingdom:statusline` | Shows today's earnings in your Claude Code status line (`off` to remove) |
+| `/token-kingdom:statusline` | Shows what each session earns in your Claude Code status line (`off` to remove) |
 
 Sync is automatic: nothing to run. It starts at the end of every Claude reply and never slows Claude down.
 
-Today's earnings appear in your Claude Code status line, e.g. `💰340 🪵90 🪨40` (numbers in gray, empty until you earn something that day). Cmd+click opens your village in terminals with link support (iTerm2, Ghostty, WezTerm, Kitty).
+Each Claude Code session shows its own earnings in the status line, e.g. `💰340 🪵90 🪨40` (numbers in gray, empty until the session earns something). Switch tabs and you see the other session's numbers. Cmd+click opens your village in terminals with link support (iTerm2, Ghostty, WezTerm, Kitty).
 
 - **Automatic**: `/token-kingdom:village` sets it up on first run. If you already had a status line, it is kept and the gains are added after it. Your `settings.json` is backed up once as `settings.json.token-kingdom.bak`.
 - **Already installed, or to undo**: run `/token-kingdom:statusline` to add it, `/token-kingdom:statusline off` to restore your previous one.
-- **Hand-made status line**: read `~/.token-kingdom/statusline.txt` in your own script.
+- **Hand-made status line**: pipe Claude Code's JSON into `node ~/.token-kingdom/statusline/statusline.mjs --segment` and append its output.
 
 ## 🔒 Privacy
 
@@ -62,8 +62,8 @@ Everything lives in `~/.token-kingdom/`:
 | --- | --- |
 | `config.json` | Your token (mode `0600`) |
 | `state.json` | Read position in each transcript |
-| `today.json`, `statusline.txt` | Today's gains, for the status line |
-| `statusline.mjs`, `statusline-inner.json` | Status line script, and your previous one if you had any |
+| `sessions.json` | What each session earned (kept 3 days) |
+| `statusline/`, `statusline-inner.json` | Status line script, and your previous one if you had any |
 | `sync.log` | Sync log (capped at 1 MB) |
 
 > ⚠️ `config.json` is a secret: whoever has it can sign in to your kingdom and send usage in your name. Don't share it, don't commit it.

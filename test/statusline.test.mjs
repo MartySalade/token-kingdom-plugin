@@ -3,7 +3,9 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { test } from "node:test";
+import { sessionHash } from "../scripts/lib/gains.mjs";
 import { setupStatusLine } from "../scripts/lib/statusline.mjs";
+import { writeJsonPrivate } from "../scripts/lib/store.mjs";
 import { tmpHome } from "./helpers.mjs";
 
 const ours = (paths) => `node "${paths.statuslineScript}"`;
@@ -14,8 +16,9 @@ function withSettings(settings) {
   if (settings !== undefined) writeFileSync(h.paths.settings, typeof settings === "string" ? settings : JSON.stringify(settings));
   return h;
 }
-const run = (paths, input = "{}") =>
-  spawnSync(process.execPath, [paths.statuslineScript], { input, encoding: "utf8", env: { ...process.env, TOKEN_KINGDOM_HOME: paths.home } }).stdout;
+const run = (paths, input = "{}", ...args) => spawnSync(process.execPath, [paths.statuslineScript, ...args], { input, encoding: "utf8" }).stdout;
+const plain = (s) => s.replace(/\x1b\][^\x1b]*\x1b\\/g, "").replace(/\x1b\[[0-9;]*m/g, "");
+const earn = (paths, sid, gains) => writeJsonPrivate(paths.sessions, { [sessionHash(sid)]: { at: Date.now(), ...gains } });
 
 test("pas de status line → la nôtre est posée, le reste des réglages intact", () => {
   const { paths } = withSettings({ theme: "dark" });
@@ -36,18 +39,27 @@ test("status line existante : enveloppée, off la rétablit", () => {
   assert.match(setupStatusLine({ paths, mode: "on" }), /yours is kept/);
   assert.equal(settingsOf(paths).statusLine.command, ours(paths));
   assert.equal(run(paths), "mine");
-  writeFileSync(paths.segment, "💰5");
-  assert.equal(run(paths), "mine    💰5");
+  earn(paths, "s1", { gold: 5, wood: 0, stone: 0 });
+  assert.equal(plain(run(paths, JSON.stringify({ session_id: "s1" }))), "mine    💰5");
+  assert.equal(plain(run(paths, JSON.stringify({ session_id: "autre" }))), "mine");
   assert.match(setupStatusLine({ paths, mode: "off" }), /restored/);
   assert.deepEqual(settingsOf(paths).statusLine, original);
   assert.equal(existsSync(paths.statuslineInner), false);
 });
 
+test("--segment n'affiche que les gains de la session", () => {
+  const { paths } = withSettings({});
+  setupStatusLine({ paths, mode: "on" });
+  earn(paths, "s1", { gold: 7, wood: 0, stone: 0 });
+  assert.equal(plain(run(paths, JSON.stringify({ session_id: "s1" }), "--segment")), "💰7");
+  assert.equal(run(paths, "{}", "--segment"), "");
+});
+
 test("sans ancienne status line : ligne par défaut + gains, off la retire", () => {
   const { paths } = withSettings({});
   setupStatusLine({ paths, mode: "on" });
-  writeFileSync(paths.segment, "💰5");
-  const out = run(paths, JSON.stringify({ model: { display_name: "Sonnet" }, cwd: "/a/b", context_window: { used_percentage: 11.4 } }));
+  earn(paths, "s1", { gold: 5, wood: 0, stone: 0 });
+  const out = plain(run(paths, JSON.stringify({ session_id: "s1", model: { display_name: "Sonnet" }, cwd: "/a/b", context_window: { used_percentage: 11.4 } })));
   assert.match(out, /Sonnet.*b.*ctx: 11%\s+💰5$/s);
   setupStatusLine({ paths, mode: "off" });
   assert.equal("statusLine" in settingsOf(paths), false);
@@ -57,8 +69,8 @@ test("idempotent, et une status line qui lit déjà les gains est laissée", () 
   const a = withSettings({});
   setupStatusLine({ paths: a.paths, mode: "on" });
   assert.match(setupStatusLine({ paths: a.paths, mode: "on" }), /already shows/);
-  const b = withSettings({ statusLine: { type: "command", command: "cat ~/.token-kingdom/statusline.txt" } });
-  assert.match(setupStatusLine({ paths: b.paths, mode: "on" }), /already reads/);
+  const b = withSettings({ statusLine: { type: "command", command: "node ~/.token-kingdom/statusline/statusline.mjs --segment" } });
+  assert.match(setupStatusLine({ paths: b.paths, mode: "on" }), /already shows/);
 });
 
 test("réglages illisibles : rien n'est écrit", () => {
@@ -75,7 +87,7 @@ test("off sans notre status line : rien à faire", () => {
 test("un script qui lit déjà les gains est reconnu", () => {
   const h = withSettings({});
   const script = `${h.root}/mine.sh`;
-  writeFileSync(script, "tk=$(cat ~/.token-kingdom/statusline.txt)\n");
+  writeFileSync(script, "tk=$(node ~/.token-kingdom/statusline/statusline.mjs --segment)\n");
   writeFileSync(h.paths.settings, JSON.stringify({ statusLine: { type: "command", command: `bash ${script}` } }));
-  assert.match(setupStatusLine({ paths: h.paths, mode: "on" }), /already reads/);
+  assert.match(setupStatusLine({ paths: h.paths, mode: "on" }), /already shows/);
 });

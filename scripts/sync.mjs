@@ -5,17 +5,10 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { acquireLock, releaseLock, touchLock } from "./lib/lock.mjs";
 import { getPaths } from "./lib/paths.mjs";
-import { writeSegment } from "./lib/notice.mjs";
 import { log } from "./lib/store.mjs";
 import { runSync } from "./lib/sync.mjs";
 
 if (process.argv.includes("--spawn")) {
-  // la ligne de gains du jour se vide au changement de jour, même sans nouveau gain
-  try {
-    writeSegment(getPaths());
-  } catch {
-    // la status line garde l'ancienne ligne
-  }
   try {
     spawn(process.execPath, [fileURLToPath(import.meta.url)], { detached: true, stdio: "ignore" }).unref();
   } catch {

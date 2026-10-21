@@ -4,18 +4,25 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readJson, writeJsonPrivate } from "./store.mjs";
 
-const SOURCE = fileURLToPath(new URL("../statusline.mjs", import.meta.url));
+// copiés dans ~/.token-kingdom/statusline/ : stable d'une version du plugin à l'autre, et sans dépendre de son dossier
+const FILES = [
+  ["statusline-run.mjs", "statusline.mjs"],
+  ["gains.mjs", "gains.mjs"],
+  ["paths.mjs", "paths.mjs"],
+  ["store.mjs", "store.mjs"],
+  ["url.mjs", "url.mjs"],
+];
 
-/** La commande, ou le script qu'elle lance, lit déjà statusline.txt (ex. status line réglée à la main). */
+/** La commande, ou le script qu'elle lance, appelle déjà notre script (ex. status line réglée à la main). */
 function readsGains(command) {
-  if (command.includes("statusline.txt")) return true;
+  if (command.includes("statusline.mjs")) return true;
   return command
     .split(/\s+/)
     .map((t) => t.replace(/^["']|["']$/g, "").replace(/^~(?=\/)/, homedir()))
     .filter((t) => /\.(sh|mjs|js|py)$/.test(t))
     .some((f) => {
       try {
-        return readFileSync(f, "utf8").includes("statusline.txt");
+        return readFileSync(f, "utf8").includes("statusline.mjs");
       } catch {
         return false;
       }
@@ -55,14 +62,14 @@ export function setupStatusLine({ paths, mode }) {
     else delete settings.statusLine;
     writeSettings(paths.settings, settings);
     if (wrapped) unlinkSync(paths.statuslineInner);
-    return "✅ Status line restored. Your daily gains are no longer shown.";
+    return "✅ Status line restored. Session earnings are no longer shown.";
   }
 
-  if (cur?.command === ours) return "✅ Your status line already shows your daily gains.";
-  if (cur?.command && readsGains(cur.command)) return "✅ Your status line already reads your daily gains.";
+  if (cur?.command === ours) return "✅ Your status line already shows what each session earns.";
+  if (cur?.command && readsGains(cur.command)) return "✅ Your status line already shows what each session earns.";
 
-  mkdirSync(dirname(paths.statuslineScript), { recursive: true, mode: 0o700 });
-  copyFileSync(SOURCE, paths.statuslineScript);
+  mkdirSync(paths.statuslineDir, { recursive: true, mode: 0o700 });
+  for (const [from, to] of FILES) copyFileSync(fileURLToPath(new URL(from, import.meta.url)), `${paths.statuslineDir}/${to}`);
   if (cur?.command) writeJsonPrivate(paths.statuslineInner, { original: cur, command: cur.command });
   if (existsSync(paths.settings)) {
     const bak = `${paths.settings}.token-kingdom.bak`;
@@ -73,6 +80,6 @@ export function setupStatusLine({ paths, mode }) {
   settings.statusLine = { type: "command", command: ours };
   writeSettings(paths.settings, settings);
   return cur?.command
-    ? "✅ Today's earnings are now added to your status line (yours is kept). Undo: /token-kingdom:statusline off"
-    : "✅ Your status line now shows today's earnings. Undo: /token-kingdom:statusline off";
+    ? "✅ Each session's earnings are now added to your status line (yours is kept). Undo: /token-kingdom:statusline off"
+    : "✅ Your status line now shows what each session earns. Undo: /token-kingdom:statusline off";
 }
