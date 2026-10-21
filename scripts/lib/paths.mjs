@@ -12,7 +12,6 @@ export function getPaths(env = process.env) {
     projects: join(claude, "projects"),
     config: join(home, "config.json"),
     state: join(home, "state.json"),
-    pending: join(home, "pending.json"),
     today: join(home, "today.json"),
     segment: join(home, "statusline.txt"),
     log: join(home, "sync.log"),

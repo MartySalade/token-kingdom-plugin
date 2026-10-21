@@ -5,21 +5,16 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { acquireLock, releaseLock, touchLock } from "./lib/lock.mjs";
 import { getPaths } from "./lib/paths.mjs";
-import { takeNotice, writeSegment } from "./lib/notice.mjs";
-import { log, readJson } from "./lib/store.mjs";
+import { writeSegment } from "./lib/notice.mjs";
+import { log } from "./lib/store.mjs";
 import { runSync } from "./lib/sync.mjs";
 
 if (process.argv.includes("--spawn")) {
-  // gains déjà synchronisés par un tour précédent : une ligne grise, jamais bloquante
+  // la ligne de gains du jour se vide au changement de jour, même sans nouveau gain
   try {
-    const p = getPaths();
-    const cfg = readJson(p.config, null);
-    writeSegment(p);
-    // status line : le total du jour est affiché en bas, pas de message à chaque tour
-    const msg = takeNotice({ paths: p, quiet: cfg?.quiet === true || cfg?.statusline === true });
-    if (msg) process.stdout.write(JSON.stringify({ systemMessage: msg }));
+    writeSegment(getPaths());
   } catch {
-    // pas de message
+    // la status line garde l'ancienne ligne
   }
   try {
     spawn(process.execPath, [fileURLToPath(import.meta.url)], { detached: true, stdio: "ignore" }).unref();

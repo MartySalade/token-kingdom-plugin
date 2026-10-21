@@ -1,12 +1,15 @@
 import { writeFileSync } from "node:fs";
+import { DEFAULT_API_URL } from "./paths.mjs";
 import { readJson, writeJsonPrivate } from "./store.mjs";
+import { validApiUrl } from "./url.mjs";
 
-export const NOTICE_EVERY_MS = 5 * 60_000;
 const ICONS = [
   ["gold", "💰"],
   ["wood", "🪵"],
   ["stone", "🪨"],
 ];
+const GREY = "\x1b[90m";
+const RESET = "\x1b[0m";
 
 const num = (v) => (Number.isFinite(v) && v > 0 ? v : 0);
 const fmt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : String(n));
@@ -15,45 +18,33 @@ const localDay = (now) => {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 };
 
-function line(total) {
+/** « 💰 340  🪵 90 », chiffres en gris ; vide s'il n'y a rien. Lien du terminal (OSC 8) vers le village. */
+export function formatSegment(total, url) {
   const parts = ICONS.map(([k, icon]) => [Math.floor(num(total[k])), icon]).filter(([n]) => n >= 1);
-  return parts.length === 0 ? "" : `🏰 ${parts.map(([n, icon]) => `+${fmt(n)} ${icon}`).join(" ")}`;
+  if (parts.length === 0) return "";
+  const text = parts.map(([n, icon]) => `${icon} ${GREY}${fmt(n)}${RESET}`).join("  ");
+  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 }
 
 /** Écrit le total du jour pour la status line (vide si rien, ou si le dernier gain date d'un autre jour). */
 export function writeSegment(paths, now = Date.now()) {
   const t = readJson(paths.today, null);
+  const apiUrl = readJson(paths.config, null)?.apiUrl;
+  const url = typeof apiUrl === "string" && validApiUrl(apiUrl) ? apiUrl : DEFAULT_API_URL;
   try {
-    writeFileSync(paths.segment, t?.day === localDay(now) ? line(t) : "", { mode: 0o600 });
+    writeFileSync(paths.segment, t?.day === localDay(now) ? formatSegment(t, url) : "", { mode: 0o600 });
   } catch {
     // la status line n'affichera rien
   }
 }
 
-/** Ajoute les gains d'un lot accepté : cumul en attente d'affichage, et total du jour. */
+/** Ajoute les gains d'un lot accepté au total du jour et met la ligne à jour. */
 export function addGains(paths, gains, now = Date.now()) {
   if (!gains || typeof gains !== "object") return;
   if (!ICONS.some(([k]) => num(gains[k]) > 0)) return;
-  const sum = (cur) => Object.fromEntries(ICONS.map(([k]) => [k, num(cur?.[k]) + num(gains[k])]));
-  const pending = readJson(paths.pending, {});
-  writeJsonPrivate(paths.pending, { ...pending, ...sum(pending) });
   const day = localDay(now);
-  const t = readJson(paths.today, null);
-  writeJsonPrivate(paths.today, { day, ...sum(t?.day === day ? t : null) });
+  const cur = readJson(paths.today, null);
+  const base = cur?.day === day ? cur : null;
+  writeJsonPrivate(paths.today, { day, ...Object.fromEntries(ICONS.map(([k]) => [k, num(base?.[k]) + num(gains[k])])) });
   writeSegment(paths, now);
-}
-
-/** Ligne à afficher, ou null (rien à dire, trop tôt, mode quiet ou status line). Remet le cumul à zéro quand elle part. */
-export function takeNotice({ paths, quiet = false, now = Date.now() }) {
-  const cur = readJson(paths.pending, null);
-  if (!cur) return null;
-  if (quiet) {
-    writeJsonPrivate(paths.pending, {});
-    return null;
-  }
-  if (now - num(cur.shownAt) < NOTICE_EVERY_MS) return null;
-  const msg = line(cur);
-  if (!msg) return null;
-  writeJsonPrivate(paths.pending, { shownAt: now });
-  return msg;
 }
