@@ -31,7 +31,7 @@ That's it. The first run founds your kingdom (pick your handle in the browser). 
 
 Sync is automatic: nothing to run. It starts at the end of every Claude reply and never slows Claude down.
 
-Want today's earnings in your status line? After each sync, `~/.token-kingdom/statusline.txt` holds a compact line, e.g. `💰 340  🪵 90  🪨 40`. In terminals with link support (iTerm2, Ghostty, WezTerm, Kitty), Cmd+click opens your village. Append it to your status line script:
+Want today's earnings in your status line? After each sync, `~/.token-kingdom/statusline.txt` holds a compact line, e.g. `💰340 🪵90 🪨40` (numbers in gray, empty until you earn something that day). Append it to your status line script:
 
 ```bash
 tk=$(cat ~/.token-kingdom/statusline.txt 2>/dev/null)
