@@ -10,7 +10,7 @@ const plain = (s) => s.replace(/\x1b\][^\x1b]*\x1b\\/g, "").replace(/\x1b\[[0-9;
 const link = (s) => /\x1b\]8;;([^\x1b]*)\x1b\\/.exec(s)?.[1];
 
 test("icône à gauche de chaque valeur, rien sous 1, k au-delà de 1000", () => {
-  assert.equal(plain(formatSegment({ gold: 1500, wood: 20.5, stone: 0.4 }, "https://x.test")), "💰 1.5k  🪵 20");
+  assert.equal(plain(formatSegment({ gold: 1500, wood: 20.5, stone: 0.4 }, "https://x.test")), "💰 1.5k 🪵 20");
   assert.equal(formatSegment({ gold: 0.4, wood: 0, stone: 0 }, "https://x.test"), "");
 });
 
@@ -25,7 +25,7 @@ test("total du jour cumulé, remis à zéro le lendemain", () => {
   const day = new Date(2026, 9, 21, 12).getTime();
   addGains(paths, { gold: 100, wood: 0, stone: 5 }, day);
   addGains(paths, { gold: 50, wood: 0, stone: 0 }, day + 1000);
-  assert.equal(plain(readFileSync(paths.segment, "utf8")), "💰 150  🪨 5");
+  assert.equal(plain(readFileSync(paths.segment, "utf8")), "💰 150 🪨 5");
   writeSegment(paths, day + 24 * 3600_000);
   assert.equal(readFileSync(paths.segment, "utf8"), "");
 });

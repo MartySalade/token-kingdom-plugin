@@ -10,6 +10,7 @@ const ICONS = [
 ];
 const GREY = "\x1b[90m";
 const RESET = "\x1b[0m";
+const NO_UNDERLINE = "\x1b[24m";
 
 const num = (v) => (Number.isFinite(v) && v > 0 ? v : 0);
 const fmt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : String(n));
@@ -22,8 +23,8 @@ const localDay = (now) => {
 export function formatSegment(total, url) {
   const parts = ICONS.map(([k, icon]) => [Math.floor(num(total[k])), icon]).filter(([n]) => n >= 1);
   if (parts.length === 0) return "";
-  const text = parts.map(([n, icon]) => `${icon} ${GREY}${fmt(n)}${RESET}`).join("  ");
-  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+  const text = parts.map(([n, icon]) => `${icon} ${GREY}${fmt(n)}${RESET}`).join(" ");
+  return `\x1b]8;;${url}\x1b\\${NO_UNDERLINE}${text}\x1b]8;;\x1b\\`;
 }
 
 /** Écrit le total du jour pour la status line (vide si rien, ou si le dernier gain date d'un autre jour). */
