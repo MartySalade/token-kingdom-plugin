@@ -31,6 +31,8 @@ That's it. The first run founds your kingdom (pick your handle in the browser). 
 
 Sync is automatic: nothing to run. It starts at the end of every Claude reply and never slows Claude down.
 
+After a sync, a single gray line sums up what you earned, e.g. `🏰 +120 🪙 +40 🪵`. It shows at most once every 5 minutes, and only when something was gained. To turn it off, add `"quiet": true` to `config.json`.
+
 ## 🔒 Privacy
 
 ```
@@ -55,6 +57,7 @@ Everything lives in `~/.token-kingdom/`:
 | --- | --- |
 | `config.json` | Your token (mode `0600`) |
 | `state.json` | Read position in each transcript |
+| `pending.json` | Gains waiting to be shown |
 | `sync.log` | Sync log (capped at 1 MB) |
 
 > ⚠️ `config.json` is a secret: whoever has it can sign in to your kingdom and send usage in your name. Don't share it, don't commit it.

@@ -2,6 +2,7 @@ import { postEvents } from "./api.mjs";
 import { extractEvents, sessionHash, toWire } from "./parse.mjs";
 import { sep } from "node:path";
 import { READ_CHUNK, listTranscripts, readFrom } from "./scan.mjs";
+import { addPending } from "./notice.mjs";
 import { log, readJson, writeJsonPrivate } from "./store.mjs";
 
 export const BATCH = 500;
@@ -33,12 +34,15 @@ export async function runSync({ paths, fetchImpl = fetch, sleep = wait, readChun
       heartbeat();
       const batch = queue.slice(0, BATCH);
       const sessions = [...titles].slice(0, TITLES_PER_REQUEST).map(([id, title]) => ({ id, title }));
-      const { status } = await postEvents({ apiUrl: config.apiUrl, token: config.token, events: batch, sessions, fetchImpl });
+      const { status, gains } = await postEvents({ apiUrl: config.apiUrl, token: config.token, events: batch, sessions, fetchImpl });
       requests++;
       if (status === 401) return "unauthorized";
       if (status === 400) log(paths.log, `batch of ${batch.length} events rejected (400), skipped`);
       else if (status < 200 || status >= 300) return "retry_later";
-      else sent += batch.length;
+      else {
+        sent += batch.length;
+        addPending(paths.pending, gains);
+      }
       queue = queue.slice(BATCH);
       for (const s of sessions) titles.delete(s.id);
     }

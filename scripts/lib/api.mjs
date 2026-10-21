@@ -6,7 +6,8 @@ export async function postEvents({ apiUrl, token, events, sessions = [], fetchIm
       body: JSON.stringify(sessions.length ? { events, sessions } : { events }),
       signal: AbortSignal.timeout(timeoutMs),
     });
-    return { status: res.status };
+    const body = res.ok ? await res.json().catch(() => null) : null;
+    return { status: res.status, gains: body?.gains };
   } catch {
     return { status: 0 };
   }
